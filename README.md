@@ -1,12 +1,8 @@
 # Setup
-By default, server.ipynb uses port 1000. If this doesn't work, change it in util.py's SERVER constant. 
+By default, server.ipynb uses port 1000, then all the other files increment ports up to 1003. Additionally, temp ports are sourced from your available ports. If this doesn't work, change it in util.py's SERVER constant. 
 
 # TODO
-- device.ipynb
-- 3-way handshakes
-- phone only sends requests bc there's no pv model of receiving requests 
-- server blasts message to socket channel, but phone has already closed socket connection, phone needs listener 
-- rsa???
+- Yeah the 3-way handshake from the phone to the server doesn't work. This seems to be because RSA isn't implemented in the right order, ie., the message is sent and decryption is attempted with the public key of the wrong key pair.  
 
 # util.py
 util.py is a file that implements universal versions of certain methods ensuring a common implementation of a protocol. Those methods are as follows:
