@@ -125,4 +125,4 @@ new prP:PRkey; new prS:PRkey;
 new k_ms:key; new k_md:key;
 let puP = pk(prP) in
 let puS = pk(prS) in
-( (!Phone(puS,prP)) | (!Server(puP,prS,k_ms)) | (!Device(k_md)) )
+( (!Phone(puS,prP)) | (!Server(puP,prS,k_ms)) | (!KTC(k_ms,k_md)) | (!Device(k_md)) )
