@@ -5,6 +5,9 @@ from Crypto.Util import Counter
 from Crypto.Hash import HMAC, SHA256
 from Crypto.Random import get_random_bytes
 
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+
 # NOTE: chose bc lower performance overhead and less error propogation, subject to change
 AES_MODE = AES.MODE_CTR 
 
@@ -12,6 +15,11 @@ SIZE_N = 16
 SIZE_K = 32
 
 SERVER = {"alias" : "localhost", "port" : 1000}
+
+RSA_KEY_PAIR = RSA.generate(2048)
+PHONE_PRIVATE_KEY = RSA_KEY_PAIR.export_key(format='PEM')
+SERVER_PRIVATE_KEY = RSA_KEY_PAIR.export_key(format='PEM')
+PUBLIC_KEY = RSA_KEY_PAIR.publickey().export_key(format='PEM')
 
 def encrypt(m, k, n):
     ctr = Counter.new(128, initial_value=int.from_bytes(n, byteorder='big'))
