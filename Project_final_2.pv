@@ -1,0 +1,131 @@
+type key.
+type host.
+
+type nonce.
+
+type PRkey.
+type PUkey.
+
+fun Hash(nonce,bitstring):bitstring.
+fun Hash12(nonce,bitstring,key):bitstring.
+fun Hash1(nonce,bitstring,PUkey):bitstring.
+fun Hash3(nonce,host,PUkey,PUkey):bitstring.
+
+fun senc(bitstring,key):bitstring.
+reduc forall m:bitstring,k:key; sdec(senc(m,k),k) = m.
+
+fun pk(PRkey): PUkey.
+fun aenc(bitstring, PUkey):bitstring.
+reduc forall m: bitstring, k:PRkey; adec(aenc(m,pk(k)),k) = m.
+
+fun key_to_bitstring(key):bitstring [data,typeConverter].
+fun bitstring_to_key(bitstring):key [data,typeConverter].
+
+free c:channel.
+free P,S,D:host.
+free data:bitstring [private].
+free req:bitstring.
+(*free k_s:bitstring [private].*)
+
+event AliceAuth(PUkey,host).
+event AliceAccepts(PUkey,host).
+event ServerAuth(PUkey,host).
+event ServerAccepts(PUkey,host).
+event NoChangeKDCS(bitstring).
+event NoChangeKDCD(bitstring).
+event NoChangeS(bitstring).
+event NoChangeD(bitstring).
+
+query attacker(data).
+query puX:PUkey, hostX:host; event(ServerAccepts(puX,hostX))==>event(AliceAuth(puX,hostX)).
+query puX:PUkey, hostX:host; event(AliceAccepts(puX,hostX))==>event(ServerAuth(puX,hostX)).
+query m:bitstring; event(NoChangeS(m))==>event(NoChangeKDCS(m)).
+query m:bitstring; event(NoChangeD(m))==>event(NoChangeKDCD(m)).
+
+let Phone(puS:PUkey,prP:PRkey) =
+(*1: Send Phone's encrypted public key and host ID to Server*)
+new N0:nonce;
+let h11 = Hash3(N0,P,pk(prP),puS) in
+let auth1 = aenc((N0,P,pk(prP)),puS) in
+event AliceAuth(pk(prP),P);
+out(c,(auth1,h11));
+(*4: Receive authentication request from Server*)
+in(c,(auth2:bitstring,h21:bitstring));
+let (N01:nonce,hostX:host,puX:PUkey) = adec(auth2,prP) in
+if (hostX = S) then
+if (puX = puS) then
+if Hash3(N01,hostX,puX,pk(prP)) = h21 then
+event AliceAccepts(puX,hostX);
+(*5: Send encrypted data*)
+new N2:nonce;
+let h12 = Hash1(N2,data,puX) in
+let m = aenc((N2,data),puX) in
+out(c,(m,h12));
+0.
+
+let Server(puP:PUkey,prS:PRkey,k_ms:key) =
+(*2: Receive authentication request from Phone*)
+in(c, (auth1:bitstring,h11:bitstring));
+let (N0:nonce,hostX:host,puX:PUkey) = adec(auth1,prS) in
+if (hostX = P) then
+if (puX = puP) then
+if Hash3(N0,hostX,puX,pk(prS)) = h11 then
+event ServerAccepts(puX,hostX);
+(*3: Send Server's encrypted public key and host ID to Phone*)
+new N01:nonce;
+let h21 = Hash3(N01,S,pk(prS),puX) in
+let auth2 = aenc((N01,S,pk(prS)),puX) in
+event ServerAuth(pk(prS),S);
+out(c,(auth2,h21));
+
+(*1: Request key from KDC*)
+out(c,req);
+(*4: Receive key from KDC*)
+in(c,(m1:bitstring,h1:bitstring));
+let (N1:nonce,ks:bitstring) = sdec(m1,k_ms) in
+if Hash12(N1,ks,k_ms) = h1 then
+event NoChangeS(ks);
+(*5: Send encrypted data*)
+new N3:nonce;
+let h3 = Hash(N3,data) in
+let m3 = senc((N3,data),bitstring_to_key(ks)) in
+out(c,(m3,h3));
+0.
+
+let KDC(k_ms:key,k_md:key) = 
+(*2: Receive request*)
+in(c,req:bitstring);
+new k_s:bitstring;
+new N1:nonce;
+let h1 = Hash12(N1,k_s,k_ms) in
+let m1 = senc((N1,k_s),k_ms) in
+new N2:nonce;
+let h2 = Hash12(N2,k_s,k_md) in
+let m2 = senc((N2,k_s),k_md) in
+event NoChangeKDCS(k_s);
+(*3: Send key to Server*)
+out(c,(m1,h1));
+event NoChangeKDCD(k_s);
+(*3: Send key to Device*)
+out(c,(m2,h2));
+0.
+
+let Device(k_md:key) =
+(*4: Receive key from KDC*)
+in(c,(m2:bitstring,h2:bitstring));
+let (N2:nonce,ks:bitstring) = sdec(m2,k_md) in
+if Hash12(N2,ks,k_md) = h2 then
+event NoChangeD(ks);
+(*5: Send encrypted data*)
+new N4:nonce;
+let h4 = Hash(N4,data) in
+let m4 = senc((N4,data),bitstring_to_key(ks)) in
+out(c,(m4,h4));
+0.
+
+process
+new prP:PRkey; new prS:PRkey;
+new k_ms:key; new k_md:key;
+let puP = pk(prP) in
+let puS = pk(prS) in
+( (!Phone(puS,prP)) | (!Server(puP,prS,k_ms)) | (!KDC(k_ms,k_md)) | (!Device(k_md)) )
