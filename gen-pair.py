@@ -22,9 +22,10 @@ def make_pair_file(filename):
         private_key = pair.export_key(format='PEM')
         f.write(private_key)
     
-    with open(filename + ".pub", "wb") as f:
-        public_key = pair.publickey().export_key(format='PEM')
-        f.write(public_key)
+    # dont actually need, can just generate it from pk
+    # with open(filename + ".pub", "wb") as f:
+    #     public_key = pair.publickey().export_key(format='PEM')
+    #     f.write(public_key)
 
 make_pair_file("phone")
 make_pair_file("server")
