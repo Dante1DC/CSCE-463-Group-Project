@@ -14,12 +14,15 @@ AES_MODE = AES.MODE_CTR
 SIZE_N = 16
 SIZE_K = 32
 
-SERVER = {"alias" : "localhost", "port" : 1000}
+SERVER = {"alias" : "localhost", "port" : 3000}
 
-RSA_KEY_PAIR = RSA.generate(2048)
-PHONE_PRIVATE_KEY = RSA_KEY_PAIR.export_key(format='PEM')
-SERVER_PRIVATE_KEY = RSA_KEY_PAIR.export_key(format='PEM')
-PUBLIC_KEY = RSA_KEY_PAIR.publickey().export_key(format='PEM')
+encoded_key = open("phone.pk", "rb").read()
+PHONE_PRIVATE_KEY = RSA.import_key(encoded_key)
+PHONE_PUBLIC_KEY = PHONE_PRIVATE_KEY.public_key()
+
+encoded_key = open("server.pk", "rb").read()
+SERVER_PRIVATE_KEY = RSA.import_key(encoded_key)
+SERVER_PUBLIC_KEY = SERVER_PRIVATE_KEY.public_key()
 
 def encrypt(m, k, n):
     ctr = Counter.new(128, initial_value=int.from_bytes(n, byteorder='big'))
