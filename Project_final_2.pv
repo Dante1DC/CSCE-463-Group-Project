@@ -25,7 +25,6 @@ free c:channel.
 free P,S,D:host.
 free data:bitstring [private].
 free req:bitstring.
-(*free k_s:bitstring [private].*)
 
 event AliceAuth(PUkey,host).
 event AliceAccepts(PUkey,host).
