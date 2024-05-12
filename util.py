@@ -50,9 +50,15 @@ import time
 def read_until_time_gap(sock, seconds):
     buffer = b""
     last_packet_time = time.time()
+    sock.setnonblocking(True)
     while time.time() - last_packet_time < seconds:
-        buffer += sock.recv(n, 1024)
-        last_packet_time = time.time()
+        try:
+            buffer += sock.recv(n, 1024)
+            last_packet_time = time.time()
+        except Exception:
+            # throws error if recv no data
+            pass
+    sock.setnonblocking(False)
     return buffer
 
 # hash function (equilvalent to Hash1 in the pv file) 
