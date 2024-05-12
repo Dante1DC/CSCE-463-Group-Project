@@ -35,6 +35,26 @@ def decrypt(ciphertext, k, n):
     cipher = AES.new(k, AES_MODE, counter=ctr)
     return cipher.decrypt(ciphertext)
 
+# attempts to read until we have n bytes. will hang forever
+def read_n(sock, n):
+    return sock.recv(n, socket.MSG_WAITALL)
+    # concat = b""
+    # while len(concat) < n:
+    #     print("will read upto:", n-len(concat))
+    #     incoming = sock.recv(n-len(concat))
+    #     concat = concat + incoming
+    # return concat
+
+import time
+# very hacky, reads until there N seconds of no incoming data
+def read_until_time_gap(sock, seconds):
+    buffer = b""
+    last_packet_time = time.time()
+    while time.time() - last_packet_time < seconds:
+        buffer += sock.recv(n, 1024)
+        last_packet_time = time.time()
+    return buffer
+
 # hash function (equilvalent to Hash1 in the pv file) 
 def hash(m, k, n):
     h = HMAC.new(k, digestmod=SHA256)
